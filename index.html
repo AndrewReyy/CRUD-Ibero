@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD Inventario IberoTech</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-light">
+  <div class="container py-4 my-2">
+    <header class="text-center p-4 mb-4 bg-white rounded-4 shadow-sm border">
+      <h1 class="display-6 fw-bold text-dark mb-2">
+        <i class="bi bi-boxes text-primary me-2"></i>Inventario IberoTech
+      </h1>
+    </header>
+    <!-- CONTENEDOR DE ALERTAS DINÁMICAS-->
+    <div id="contenedorAlertas" class="mb-3"></div>
+
+    <!-- TARJETAS DE MÉTRICAS (KPIS DEL INVENTARIO)-->
+    <div class="row g-3 mb-4">
+      <!-- KPI 1: Total de productos registrados -->
+      <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+          <div class="card-body d-flex align-items-center justify-content-between p-3">
+            <div>
+              <span class="text-muted small text-uppercase fw-semibold d-block">Productos Listados</span>
+              <span id="kpiTotalProductos" class="fs-3 fw-bold text-dark">0</span>
+            </div>
+            <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+              <i class="bi bi-box-seam fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Unidades totales en stock -->
+      <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+          <div class="card-body d-flex align-items-center justify-content-between p-3">
+            <div>
+              <span class="text-muted small text-uppercase fw-semibold d-block">Unidades en Stock</span>
+              <span id="kpiTotalUnidades" class="fs-3 fw-bold text-dark">0 <small class="fs-6 text-muted">uds</small></span>
+            </div>
+            <div class="bg-success-subtle text-success p-3 rounded-circle">
+              <i class="bi bi-check-circle fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Valoración económica total -->
+      <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+          <div class="card-body d-flex align-items-center justify-content-between p-3">
+            <div>
+              <span class="text-muted small text-uppercase fw-semibold d-block">Valor del Inventario</span>
+              <span id="kpiValorInventario" class="fs-3 fw-bold text-dark">$0</span>
+            </div>
+            <div class="bg-info-subtle text-info p-3 rounded-circle">
+              <i class="bi bi-cash-stack fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORMULARIO CREAR / EDITAR (RESPONSIVE & CENTRADO)-->
+    <div class="row justify-content-center mb-5">
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="tarjetaFormulario">
+          
+          <!-- Cabecera del formulario (cambia dinámicamente según si creamos o editamos) -->
+          <div id="cabeceraFormulario" class="card-header bg-primary-subtle text-primary-emphasis border-0 py-3 px-4">
+            <h2 id="tituloFormulario" class="h5 mb-0 fw-bold d-flex align-items-center">
+              <i class="bi bi-plus-circle-fill me-2 fs-5"></i>
+              <span>Registrar Nuevo Producto</span>
+            </h2>
+          </div>
+
+          <!-- Cuerpo del formulario -->
+          <div class="card-body p-4 bg-white">
+            <form id="formularioProducto" novalidate>
+              <!-- Campo oculto para almacenar el ID cuando se edita un producto (0 = Nuevo) -->
+              <input type="hidden" id="idProducto" value="0">
+
+              <!-- Campo Nombre -->
+              <div class="mb-3">
+                <label for="nombre" class="form-label fw-semibold">Nombre del producto <span class="text-danger">*</span></label>
+                <input type="text" id="nombre" class="form-control" placeholder="Ej: Portátil Dell Latitude 15''" required>
+              </div>
+
+              <!-- Campo Categoría -->
+              <div class="mb-3">
+                <label for="categoria" class="form-label fw-semibold">Categoría <span class="text-danger">*</span></label>
+                <select id="categoria" class="form-select" required>
+                  <option value="Computadores">Computadores</option>
+                  <option value="Monitores">Monitores</option>
+                  <option value="Accesorios" selected>Accesorios</option>
+                  <option value="Almacenamiento">Almacenamiento</option>
+                  <option value="Audio">Audio</option>
+                  <option value="Redes">Redes</option>
+                </select>
+              </div>
+
+              <!-- Fila interna responsive para Precio y Stock -->
+              <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-6">
+                  <label for="precio" class="form-label fw-semibold">Precio unitario ($ COP) <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" id="precio" class="form-control" min="1000" step="100" placeholder="150000" required>
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-6">
+                  <label for="stock" class="form-label fw-semibold">Stock (unidades) <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-box"></i></span>
+                    <input type="number" id="stock" class="form-control" min="0" step="1" placeholder="20" required>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <!-- Botón Cancelar (oculto por defecto, visible solo en modo edición) -->
+                <button type="button" id="btnCancelarEdicion" class="btn btn-outline-secondary d-none">
+                  <i class="bi bi-x-circle me-1"></i> Cancelar edición
+                </button>
+                
+                <!-- Botón Enviar (Crear o Actualizar) -->
+                <button type="submit" id="btnSubmitFormulario" class="btn btn-primary fw-bold">
+                  <i class="bi bi-plus-lg me-1"></i> <span>Agregar al Inventario</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DE PRODUCTOS Y BUSCADOR RESPONSIVE -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+          
+          <!-- Cabecera de la tabla con Buscador integrado -->
+          <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+              <h2 class="h5 mb-0 fw-bold text-dark">
+                <i class="bi bi-card-checklist text-primary me-2"></i>Catálogo de Productos
+              </h2>
+            </div>
+
+            <!-- Formulario del Buscador -->
+            <form id="formularioBuscador" class="d-flex gap-2 w-100 w-md-auto">
+              <div class="input-group">
+                <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar por nombre o categoría...">
+                <button type="submit" class="btn btn-primary" title="Buscar">
+                  <i class="bi bi-search"></i>
+                </button>
+                <button type="button" id="btnLimpiarBusqueda" class="btn btn-outline-secondary d-none" title="Limpiar filtro">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col" class="ps-4 py-3">ID</th>
+                  <th scope="col" class="py-3">Producto</th>
+                  <th scope="col" class="py-3">Categoría</th>
+                  <th scope="col" class="py-3">Precio</th>
+                  <th scope="col" class="py-3">Stock</th>
+                  <th scope="col" class="py-3 text-end pe-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaProductosCuerpo">
+                <!-- Fila de carga inicial (Spinner de Bootstrap) -->
+                <tr id="filaCargando">
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <div class="spinner-border text-primary mb-2" role="status">
+                      <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <div class="fw-semibold">Cargando productos desde la API...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pie informativo de la tabla -->
+          <div class="card-footer bg-white border-top py-3 px-4 text-muted small d-flex justify-content-between align-items-center">
+            <span>Mostrando: <strong id="contadorRegistros">0</strong> producto(s)</span>
+            <span class="text-secondary d-flex align-items-center gap-1">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+  <!-- JAVASCRIPT DIDÁCTICO: CONSUMO DE LA API REST (api.php) CON FETCH-->
+  <script>
+    const API_URL = "api.php";
+
+    const tablaCuerpo          = document.getElementById("tablaProductosCuerpo");
+    const contadorRegistros    = document.getElementById("contadorRegistros");
+    const contenedorAlertas    = document.getElementById("contenedorAlertas");
+
+    // Elementos de los KPIs
+    const kpiTotalProductos    = document.getElementById("kpiTotalProductos");
+    const kpiTotalUnidades     = document.getElementById("kpiTotalUnidades");
+    const kpiValorInventario   = document.getElementById("kpiValorInventario");
+
+    // Elementos del Formulario
+    const formularioProducto   = document.getElementById("formularioProducto");
+    const idProductoInput      = document.getElementById("idProducto");
+    const nombreInput          = document.getElementById("nombre");
+    const categoriaInput       = document.getElementById("categoria");
+    const precioInput          = document.getElementById("precio");
+    const stockInput           = document.getElementById("stock");
+    const cabeceraFormulario   = document.getElementById("cabeceraFormulario");
+    const tituloFormulario     = document.getElementById("tituloFormulario");
+    const btnSubmitFormulario  = document.getElementById("btnSubmitFormulario");
+    const btnCancelarEdicion   = document.getElementById("btnCancelarEdicion");
+    const tarjetaFormulario    = document.getElementById("tarjetaFormulario");
+
+    // Elementos del Buscador
+    const formularioBuscador   = document.getElementById("formularioBuscador");
+    const inputBusqueda        = document.getElementById("inputBusqueda");
+    const btnLimpiarBusqueda   = document.getElementById("btnLimpiarBusqueda");
+
+    /**
+     * Formatea un número como moneda en Pesos Colombianos ($ COP)
+     * Ej: 150000 -> $150.000
+     */
+    function formatearMoneda(valor) {
+      return "$" + Number(valor).toLocaleString("es-CO", { maximumFractionDigits: 0 });
+    }
+
+    /*Muestra una alerta dinámica de Bootstrap 5 en pantalla.*/
+    function mostrarAlerta(tipo, mensaje) {
+      const icono = tipo === "success" ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill";
+      contenedorAlertas.innerHTML = `
+        <div class="alert alert-${tipo} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center" role="alert">
+          <i class="bi ${icono} fs-4 me-2"></i>
+          <div>${mensaje}</div>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+      `;
+
+      // Auto-eliminar la alerta después de 5 segundos para mantener limpia la pantalla
+      setTimeout(() => {
+        const alertaActual = contenedorAlertas.querySelector(".alert");
+        if (alertaActual) {
+          const bsAlert = bootstrap.Alert.getOrCreateInstance(alertaActual);
+          bsAlert.close();
+        }
+      }, 5000);
+    }
+
+    // 1. CARGAR PRODUCTOS Y KPIS DESDE LA API (MÉTODO GET)
+    async function cargarProductos(terminoBusqueda = "") {
+      try {
+        const url = terminoBusqueda.trim() !== "" 
+          ? `${API_URL}?q=${encodeURIComponent(terminoBusqueda.trim())}` 
+          : API_URL;
+
+        const respuesta = await fetch(url);
+
+        if (!respuesta.ok) {
+          throw new Error(`Error en la respuesta del servidor: ${respuesta.status}`);
+        }
+
+        const data = await respuesta.json();
+
+        if (data.ok) {
+          renderizarKPIs(data.kpis);
+          renderizarTabla(data.productos);
+        } else {
+          mostrarAlerta("danger", data.error || "No fue posible obtener los productos.");
+        }
+      } catch (error) {
+        console.error("Error al cargar productos:", error);
+        mostrarAlerta("danger", `Error de conexión: Asegúrate de que Apache y MySQL estén corriendo en Laragon.`);
+        tablaCuerpo.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-4 text-danger">
+              <i class="bi bi-x-circle fs-2 d-block mb-2"></i>
+              No se pudo conectar con la API (<code>api.php</code>). Revisa la consola para más detalles.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // 2. RENDERIZAR LOS KPIS EN EL DOM
+    function renderizarKPIs(kpis) {
+      if (!kpis) return;
+      kpiTotalProductos.textContent  = kpis.total_productos ?? 0;
+      kpiTotalUnidades.innerHTML     = `${Number(kpis.total_unidades ?? 0).toLocaleString("es-CO")} <small class="fs-6 text-muted">uds</small>`;
+      kpiValorInventario.textContent = formatearMoneda(kpis.valor_inventario ?? 0);
+    }
+
+    // 3. RENDERIZAR LA TABLA DE PRODUCTOS
+    function renderizarTabla(productos) {
+      contadorRegistros.textContent = productos.length;
+
+      // Si no hay productos (o la búsqueda no arrojó resultados)
+      if (productos.length === 0) {
+        tablaCuerpo.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+              No se encontraron productos en el inventario.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let htmlFilas = "";
+      productos.forEach(p => {
+        const enStock = Number(p.stock) > 0;
+        const badgeStock = enStock
+          ? `<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+               <i class="bi bi-check-circle me-1"></i>${p.stock} disp.
+             </span>`
+          : `<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">
+               <i class="bi bi-slash-circle me-1"></i>Agotado
+             </span>`;
+
+        htmlFilas += `
+          <tr>
+            <td class="ps-4 fw-bold text-muted">#${p.id}</td>
+            <td>
+              <span class="fw-semibold text-dark">${escaparHTML(p.nombre)}</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-secondary border">
+                ${escaparHTML(p.categoria)}
+              </span>
+            </td>
+            <td class="fw-bold text-primary">
+              ${formatearMoneda(p.precio)}
+            </td>
+            <td>${badgeStock}</td>
+            <td class="text-end pe-4">
+              <div class="d-inline-flex gap-1">
+                <!-- Botón Editar -->
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="iniciarEdicion(${p.id})" title="Editar producto">
+                  <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">Editar</span>
+                </button>
+                <!-- Botón Eliminar -->
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarEliminar(${p.id}, '${escaparJS(p.nombre)}')" title="Eliminar producto">
+                  <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Borrar</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tablaCuerpo.innerHTML = htmlFilas;
+    }
+
+    function escaparHTML(texto) {
+      const div = document.createElement("div");
+      div.textContent = texto ?? "";
+      return div.innerHTML;
+    }
+
+    function escaparJS(texto) {
+      return (texto ?? "").replace(/'/g, "\\'");
+    }
+
+    // 4. GUARDAR PRODUCTO: CREAR (POST) O ACTUALIZAR (PUT)
+    formularioProducto.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const id = parseInt(idProductoInput.value, 10);
+      const nombre = nombreInput.value.trim();
+      const categoria = categoriaInput.value;
+      const precio = parseFloat(precioInput.value);
+      const stock = parseInt(stockInput.value, 10);
+
+      if (nombre.length < 3) {
+        mostrarAlerta("warning", "El nombre debe tener al menos 3 caracteres.");
+        nombreInput.focus();
+        return;
+      }
+
+      if (isNaN(precio) || precio < 0 || isNaN(stock) || stock < 0) {
+        mostrarAlerta("warning", "El precio y el stock deben ser números positivos.");
+        return;
+      }
+
+      const payload = { nombre, categoria, precio, stock };
+
+      try {
+        btnSubmitFormulario.disabled = true;
+        btnSubmitFormulario.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Guardando...`;
+
+        let url = API_URL;
+        let metodoHTTP = "POST";
+
+        if (id > 0) {
+          metodoHTTP = "PUT";
+          url = `${API_URL}?id=${id}`;
+        }
+
+        // PETICIÓN FETCH CON JSON
+        const respuesta = await fetch(url, {
+          method: metodoHTTP,
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (resultado.ok) {
+          mostrarAlerta("success", resultado.mensaje || "Operación realizada con éxito.");
+          cancelarEdicion();
+          cargarProductos(inputBusqueda.value);
+        } else {
+          mostrarAlerta("danger", resultado.error || "Hubo un error al procesar la solicitud.");
+        }
+      } catch (error) {
+        console.error("Error al guardar producto:", error);
+        mostrarAlerta("danger", "No se pudo comunicar con el servidor.");
+      } finally {
+        btnSubmitFormulario.disabled = false;
+        actualizarBotonSubmit();
+      }
+    });
+
+    // 5. INICIAR EDICIÓN (PREPARAR FORMULARIO CON DATOS EXISTENTES)
+    async function iniciarEdicion(id) {
+      try {
+        const respuesta = await fetch(`${API_URL}?id=${id}`);
+        const data = await respuesta.json();
+
+        if (!data.ok || !data.producto) {
+          mostrarAlerta("danger", data.error || "No se encontró el producto a editar.");
+          return;
+        }
+
+        const p = data.producto;
+
+        idProductoInput.value = p.id;
+        nombreInput.value     = p.nombre;
+        categoriaInput.value  = p.categoria;
+        precioInput.value     = p.precio;
+        stockInput.value      = p.stock;
+
+        cabeceraFormulario.className = "card-header bg-warning-subtle text-warning-emphasis border-0 py-3 px-4";
+        tituloFormulario.innerHTML = `
+          <i class="bi bi-pencil-square me-2 fs-5"></i>
+          <span>Editar Producto #${p.id}</span>
+        `;
+
+        actualizarBotonSubmit();
+        btnCancelarEdicion.classList.remove("d-none");
+
+        tarjetaFormulario.scrollIntoView({ behavior: "smooth", block: "start" });
+        nombreInput.focus();
+      } catch (error) {
+        console.error("Error al cargar producto para edición:", error);
+        mostrarAlerta("danger", "Error al obtener los datos del producto.");
+      }
+    }
+
+    // 6. CANCELAR EDICIÓN Y RESTABLECER MODO CREAR
+    function cancelarEdicion() {
+      formularioProducto.reset();
+      idProductoInput.value = "0";
+
+      cabeceraFormulario.className = "card-header bg-primary-subtle text-primary-emphasis border-0 py-3 px-4";
+      tituloFormulario.innerHTML = `
+        <i class="bi bi-plus-circle-fill me-2 fs-5"></i>
+        <span>Registrar Nuevo Producto</span>
+      `;
+
+      actualizarBotonSubmit();
+      btnCancelarEdicion.classList.add("d-none");
+    }
+
+    btnCancelarEdicion.addEventListener("click", cancelarEdicion);
+
+    function actualizarBotonSubmit() {
+      const id = parseInt(idProductoInput.value, 10);
+      if (id > 0) {
+        btnSubmitFormulario.className = "btn btn-warning text-dark fw-bold";
+        btnSubmitFormulario.innerHTML = `<i class="bi bi-check2-circle me-1"></i> <span>Guardar Cambios</span>`;
+      } else {
+        btnSubmitFormulario.className = "btn btn-primary fw-bold";
+        btnSubmitFormulario.innerHTML = `<i class="bi bi-plus-lg me-1"></i> <span>Agregar al Inventario</span>`;
+      }
+    }
+
+    // 7. ELIMINAR PRODUCTO (MÉTODO DELETE)
+    async function confirmarEliminar(id, nombre) {
+      const confirmado = confirm(`¿Estás seguro de que deseas eliminar el producto "${nombre}" (#${id})?`);
+      if (!confirmado) return;
+
+      try {
+        const respuesta = await fetch(`${API_URL}?id=${id}`, {
+          method: "DELETE"
+        });
+
+        const resultado = await respuesta.json();
+
+        if (resultado.ok) {
+          mostrarAlerta("success", resultado.mensaje || "Producto eliminado correctamente.");
+
+          if (parseInt(idProductoInput.value, 10) === id) {
+            cancelarEdicion();
+          }
+
+          cargarProductos(inputBusqueda.value);
+        } else {
+          mostrarAlerta("danger", resultado.error || "No se pudo eliminar el producto.");
+        }
+      } catch (error) {
+        console.error("Error al eliminar producto:", error);
+        mostrarAlerta("danger", "Ocurrió un error al intentar eliminar el registro.");
+      }
+    }
+
+    // 8. BUSCADOR EN TIEMPO REAL
+    formularioBuscador.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const termino = inputBusqueda.value.trim();
+      actualizarBotonLimpiar();
+      cargarProductos(termino);
+    });
+
+    let temporizadorBusqueda;
+    inputBusqueda.addEventListener("input", function () {
+      actualizarBotonLimpiar();
+      clearTimeout(temporizadorBusqueda);
+      temporizadorBusqueda = setTimeout(() => {
+        cargarProductos(inputBusqueda.value.trim());
+      }, 300);
+    });
+
+    btnLimpiarBusqueda.addEventListener("click", function () {
+      inputBusqueda.value = "";
+      actualizarBotonLimpiar();
+      cargarProductos("");
+      inputBusqueda.focus();
+    });
+
+    function actualizarBotonLimpiar() {
+      if (inputBusqueda.value.trim() !== "") {
+        btnLimpiarBusqueda.classList.remove("d-none");
+      } else {
+        btnLimpiarBusqueda.classList.add("d-none");
+      }
+    }
+
+    // 9. INICIALIZACIÓN DE LA APLICACIÓN
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarProductos();
+    });
+  </script>
+</body>
+</html>

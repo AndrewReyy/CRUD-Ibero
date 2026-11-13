@@ -1,0 +1,31 @@
+/* 
+  Archivo: C:\laragon\www\crud-ibero\styles.css
+  Estilos complementarios para afinar detalles visuales sobre Bootstrap 5.
+  
+*/
+
+:root {
+  --ibero-primary: #0d6efd;
+}
+
+body {
+  background-color: #f4f6f9 !important;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Transiciones suaves para tarjetas y botones */
+.card {
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Efecto hover suave para filas de tabla */
+.table-hover tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.04);
+}
+
+/* Ajuste sutil para badges */
+.badge {
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
